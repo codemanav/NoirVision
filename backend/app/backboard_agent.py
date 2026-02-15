@@ -7,7 +7,7 @@ import json
 import asyncio
 from typing import Dict, Any, List
 from backboard import BackboardClient
-from app.models import (
+from app.models_twelvelabs.backboard import (
     WitnessClaim, 
     VideoAnalysis, 
     ComparisonResult, 

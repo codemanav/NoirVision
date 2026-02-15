@@ -1,9 +1,10 @@
 """
-Data models for NoirVision backend.
+Backboard / credibility report models (claim vs video analysis).
 """
-from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 
 class VideoDetection(BaseModel):
@@ -55,6 +56,8 @@ class CredibilityReport(BaseModel):
 
 
 class AnalysisRequest(BaseModel):
-    """Request payload for analysis endpoint."""
+    """Request payload for Backboard /analyze endpoint."""
     claim: WitnessClaim = Field(..., description="Witness claim")
-    video_analysis: VideoAnalysis = Field(..., description="Video analysis (mocked or from TwelveLabs)")
+    video_analysis: VideoAnalysis = Field(
+        ..., description="Video analysis (mocked or from TwelveLabs)"
+    )

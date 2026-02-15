@@ -6,6 +6,13 @@ from .evidence import (
     EvidenceKeyQuote,
 )
 from .jobs import JobStatus, JobRecord, JobStatusResponse, AnalyzeRequest
+from .backboard import (
+    WitnessClaim,
+    CredibilityReport,
+    VideoAnalysis,
+    VideoDetection,
+    ComparisonResult,
+)
 
 __all__ = [
     "EvidencePack",
@@ -17,4 +24,9 @@ __all__ = [
     "JobRecord",
     "JobStatusResponse",
     "AnalyzeRequest",
+    "WitnessClaim",
+    "CredibilityReport",
+    "VideoAnalysis",
+    "VideoDetection",
+    "ComparisonResult",
 ]
