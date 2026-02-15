@@ -15,7 +15,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 from app.models import CredibilityReport
-from app.backboard_agent import BackboardAnalyzer
+try:
+    from app.backboard_agent import BackboardAnalyzer
+except ImportError as e:
+    BackboardAnalyzer = None
+    logger = logging.getLogger(__name__)
+    logger.warning(f"Could not import BackboardAnalyzer: {e}")
 from app.report_generator import ReportGenerator
 from app.noirvision_analyzer import NoirVisionAnalyzer
 from app.services.twelvelabs_client import run_analysis
@@ -51,14 +56,15 @@ app = FastAPI(
 )
 
 # Add CORS middleware (explicit origins required when allow_credentials=True)
+# Allow origins from environment or default to common development/production origins
+cors_origins = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://127.0.0.1:8000"
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-    ],
+    allow_origins=[origin.strip() for origin in cors_origins],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -67,10 +73,12 @@ app.add_middleware(
 
 # Initialize analyzers
 try:
+    if BackboardAnalyzer is None:
+        raise ValueError("BackboardAnalyzer not available - backboard package may not be installed")
     analyzer = BackboardAnalyzer()
     noirvision = NoirVisionAnalyzer()
     logger.info("NoirVision analyzer initialized with Backboard AI")
-except ValueError as e:
+except (ValueError, ImportError) as e:
     logger.error(f"Failed to initialize: {e}")
     analyzer = None
     noirvision = None

@@ -6,7 +6,12 @@ import os
 import json
 import asyncio
 from typing import Dict, Any, List
-from backboard import BackboardClient
+
+try:
+    from backboard import BackboardClient
+except ImportError:
+    BackboardClient = None
+
 from app.models import (
     WitnessClaim, 
     VideoAnalysis, 
@@ -21,6 +26,9 @@ class BackboardAnalyzer:
     """
     
     def __init__(self, api_key: str = None):
+        if BackboardClient is None:
+            raise ValueError("backboard package not installed. Install it with: pip install backboard")
+        
         self.api_key = api_key or os.getenv("BACKBOARD_API_KEY")
         if not self.api_key:
             raise ValueError("BACKBOARD_API_KEY not found in environment")
