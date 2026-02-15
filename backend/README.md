@@ -1,151 +1,152 @@
 # NoirVision Backend
 
-Forensic video analysis backend powered by Backboard.io AI for credibility verification.
+Complete forensic video analysis system integrating TwelveLabs video intelligence with Backboard AI credibility verification.
 
-## 🚀 Quick Start
+## Architecture
 
-### 1. Setup Environment
+```
+Video Input → TwelveLabs Analysis → Backboard AI → Credibility Report
+```
 
+## Features
+
+- **TwelveLabs Integration**: Automated video analysis for evidence extraction
+  - Object & action detection
+  - Speech transcription
+  - Scene segmentation
+  - Temporal event tracking
+
+- **Backboard AI Analysis**: Intelligent claim verification
+  - Structured claim parsing
+  - Multi-point comparison (time, location, objects, events)
+  - Evidence-based scoring
+  - Investigation recommendations
+
+- **NoirVision Analyzer**: End-to-end pipeline
+  - Converts TwelveLabs evidence to analysis format
+  - Coordinates AI credibility assessment
+  - Generates formatted ASCII reports
+
+## Setup
+
+1. **Install Dependencies**
 ```bash
-cd backend
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # or `venv\Scripts\activate` on Windows
 pip install -r requirements.txt
 ```
 
-### 2. Configure API Keys
-
-Copy `.env.example` to `.env` and add your API keys:
-
+2. **Configure Environment**
 ```bash
 cp .env.example .env
+# Edit .env with your API keys
 ```
 
-Edit `.env`:
-```
-BACKBOARD_API_KEY=your_backboard_api_key_here
-TWELVELABS_API_KEY=your_twelvelabs_api_key_here
+Required environment variables:
+- `BACKBOARD_API_KEY`: Your Backboard.io API key
+- `TWELVELABS_API_KEY`: Your TwelveLabs API key
+- `TWELVELABS_INDEX_ID`: Your TwelveLabs index ID
+- `TWELVELABS_MOCK=true`: Use mock data for testing (optional)
+
+3. **Run Server**
+```bash
+python -m uvicorn app.main:app --reload --port 8000
 ```
 
-### 3. Run Server
+## API Endpoints
+
+### Complete Analysis (End-to-End)
+
+**POST `/analyze/complete`**
+
+Submit video and witness claim for complete analysis.
 
 ```bash
-python -m app.main
+# With video file
+curl -X POST http://localhost:8000/analyze/complete \
+  -F "claim=I saw a robbery at midnight near the warehouse" \
+  -F "video_file=@evidence.mp4"
+
+# With video URL
+curl -X POST http://localhost:8000/analyze/complete \
+  -F "claim=I saw a robbery at midnight near the warehouse" \
+  -F "video_url=https://example.com/video.mp4"
 ```
 
-Server starts at: `http://localhost:8000`
+Response:
+```json
+{
+  "report": { ... },
+  "formatted_report": "╔═══ VERITAS CREDIBILITY REPORT ═══╗\n...",
+  "video_id": "twelvelabs-video-id"
+}
+```
 
-## 📡 API Endpoints
+### TwelveLabs Video Analysis (Advanced)
 
-### Core Endpoints
+**POST `/api/videos/analyze`**
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | API information |
-| `/health` | GET | Health check |
-| `/analyze` | POST | Full analysis (claim + video) |
-| `/demo/supported` | GET | Demo: Supported claim scenario |
-| `/demo/contradicted` | GET | Demo: Contradicted claim scenario |
+Submit video for TwelveLabs processing (returns job ID for async polling).
 
-### API Documentation
+**GET `/api/videos/analyze/{job_id}`**
 
-- **Swagger UI:** `http://localhost:8000/docs`
-- **ReDoc:** `http://localhost:8000/redoc`
+Check analysis job status.
 
-## 🧪 Testing
+**GET `/api/videos/{video_id}/evidence`**
 
-### Quick Test
+Retrieve processed evidence pack.
 
+## Testing
+
+Run the integration test:
 ```bash
-# Health check
-curl http://localhost:8000/health
-
-# Test supported claim
-curl http://localhost:8000/demo/supported
-
-# Test contradicted claim
-curl http://localhost:8000/demo/contradicted
+python test_integration.py
 ```
 
-### Example Request
+This tests the complete flow:
+1. TwelveLabs video processing (mocked)
+2. Backboard AI analysis
+3. Report generation
 
-```bash
-curl -X POST "http://localhost:8000/analyze" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "claim": {
-      "claim_text": "I was robbed at the warehouse"
-    },
-    "video_analysis": {
-      "source": "video.mp4",
-      "duration": "2m 30s",
-      "detections": [...]
-    }
-  }'
-```
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 backend/
 ├── app/
-│   ├── __init__.py
-│   ├── main.py                 # FastAPI server
-│   ├── models.py               # Data models
-│   ├── backboard_agent.py      # Backboard AI integration
-│   ├── report_generator.py     # Report formatting
-│   └── mock_data.py            # Mock TwelveLabs data
-├── requirements.txt            # Dependencies
-├── .env.example                # Environment template
-├── .env                        # API keys (not in git)
-└── README.md
+│   ├── main.py                      # FastAPI application
+│   ├── config.py                    # Environment configuration
+│   ├── noirvision_analyzer.py       # End-to-end integration
+│   ├── backboard_agent.py           # Backboard AI client
+│   ├── report_generator.py          # ASCII report formatter
+│   ├── models.py                    # NoirVision data models
+│   ├── db.py                        # SQLite job storage
+│   ├── models_twelvelabs/           # TwelveLabs models
+│   │   ├── evidence.py              # Evidence pack structure
+│   │   └── jobs.py                  # Job management models
+│   ├── routers/
+│   │   └── videos.py                # TwelveLabs endpoints
+│   └── services/
+│       ├── twelvelabs_client.py     # TwelveLabs API wrapper
+│       └── s3_store.py              # S3 storage (optional)
+├── requirements.txt
+├── .env.example
+└── test_integration.py              # Integration test
 ```
 
-## 🔧 Tech Stack
+## Development
 
-- **Framework:** FastAPI
-- **AI Engine:** Backboard.io (LLM orchestration)
-- **Video Analysis:** TwelveLabs (mock data included)
-- **Language:** Python 3.13+
+- **Mock Mode**: Set `TWELVELABS_MOCK=true` to test without TwelveLabs API
+- **Logging**: All modules use Python logging (INFO level by default)
+- **Database**: SQLite for job tracking (`noirvision_jobs.db`)
 
-## 🎯 Features
+## Production Considerations
 
-✅ AI-powered claim parsing  
-✅ Intelligent video comparison  
-✅ Credibility scoring (0-100)  
-✅ Noir-styled reports  
-✅ Investigation recommendations  
-✅ Creative case titles  
+1. **API Keys**: Use secrets management (AWS Secrets Manager, HashiCorp Vault)
+2. **Video Storage**: Configure S3 bucket for evidence persistence
+3. **CORS**: Update `allow_origins` in `main.py` for your frontend domain
+4. **Rate Limiting**: Add rate limiting middleware for public endpoints
+5. **Error Handling**: Monitor Backboard and TwelveLabs API errors
 
-## 🔌 TwelveLabs Integration
+## License
 
-Currently using mock data. To integrate real TwelveLabs:
-
-1. Get TwelveLabs API key
-2. Update `.env` with `TWELVELABS_API_KEY`
-3. Replace mock data in `mock_data.py` with real API calls
-4. Data structure in `models.py` matches TwelveLabs output
-
-## 🐛 Troubleshooting
-
-**Server won't start?**
-```bash
-source venv/bin/activate
-python -m app.main
-```
-
-**Port 8000 in use?**
-Change `PORT` in `.env` file
-
-**Missing dependencies?**
-```bash
-pip install -r requirements.txt
-```
-
-## 📄 License
-
-MIT License
-
----
-
-**"In the city of lies, trust the footage."** 🎷
+NoirVision - "In the city of lies, trust the footage."
