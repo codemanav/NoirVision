@@ -1,50 +1,87 @@
 import { useState, useRef } from 'react';
+import { analyzeComplete, transformBackendResponse } from '../api/analysis';
 import { MOCK_SUPPORTED_CASE, MOCK_CONTRADICTED_CASE } from '../data/mockData';
 
 export default function Workspace({ caseData, onAnalyze, onStartAnalysis }) {
     const [title, setTitle] = useState('');
     const [claim, setClaim] = useState('');
     const [fileName, setFileName] = useState('');
+    const [videoFile, setVideoFile] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [analysisProgress, setAnalysisProgress] = useState('');
+    const [error, setError] = useState(null);
     const fileInputRef = useRef(null);
 
     const handleFileSelect = (e) => {
         const file = e.target.files?.[0];
-        if (file) setFileName(file.name);
+        if (file) {
+            setFileName(file.name);
+            setVideoFile(file);
+            setError(null);
+        }
     };
 
     const handleDrop = (e) => {
         e.preventDefault();
         setIsDragging(false);
         const file = e.dataTransfer.files?.[0];
-        if (file) setFileName(file.name);
+        if (file) {
+            setFileName(file.name);
+            setVideoFile(file);
+            setError(null);
+        }
     };
 
     const handleSubmit = async () => {
-        if (!claim.trim() || !title.trim()) return;
-        if (!onStartAnalysis) {
-            setIsAnalyzing(true);
-            setTimeout(() => {
-                const mockResult = Math.random() > 0.5 ? MOCK_SUPPORTED_CASE : MOCK_CONTRADICTED_CASE;
-                onAnalyze({ ...mockResult, claim, caseTitle: title.trim(), caseId: 'local-mock' });
-                setIsAnalyzing(false);
-            }, 2500);
+        if (!claim.trim() || !title.trim()) {
+            setError('Please provide both a case title and witness claim');
             return;
         }
+
+        if (!videoFile) {
+            setError('Please upload a video file');
+            return;
+        }
+
         setIsAnalyzing(true);
+        setError(null);
+        setAnalysisProgress('Uploading video...');
+
         try {
-            const incidentId = await onStartAnalysis({
-                title: title.trim(),
+            // Step 1: Upload and analyze with backend
+            setAnalysisProgress('Processing video with TwelveLabs...');
+            
+            const response = await analyzeComplete({
                 claim: claim.trim(),
-                videoLink: fileName ? `file:${fileName}` : '',
+                videoFile: videoFile,
+                caseId: `case-${Date.now()}`
             });
-            const mockResult = Math.random() > 0.5 ? MOCK_SUPPORTED_CASE : MOCK_CONTRADICTED_CASE;
-            onAnalyze({ ...mockResult, claim: claim.trim(), caseTitle: title.trim(), caseId: incidentId });
-        } catch (e) {
-            console.error('Start analysis failed', e);
+
+            setAnalysisProgress('Analyzing credibility with AI...');
+
+            // Step 2: Transform response to frontend format
+            const transformedData = transformBackendResponse(response);
+            
+            // Step 3: Pass to parent component
+            onAnalyze({
+                ...transformedData,
+                claim: claim.trim(),
+                caseTitle: title.trim()
+            });
+
+            // Reset form
+            setTitle('');
+            setClaim('');
+            setFileName('');
+            setVideoFile(null);
+            
+        } catch (err) {
+            console.error('Analysis failed:', err);
+            setError(err.message || 'Analysis failed. Please try again.');
         } finally {
             setIsAnalyzing(false);
+            setAnalysisProgress('');
         }
     };
 
@@ -65,8 +102,11 @@ export default function Workspace({ caseData, onAnalyze, onStartAnalysis }) {
                     <p className="text-xl mb-3" style={{ fontFamily: 'var(--font-typewriter)', color: 'var(--color-gold-400)' }}>
                         ANALYZING EVIDENCE...
                     </p>
-                    <p className="text-sm" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-noir-400)' }}>
-                        Cross-referencing claim against video timeline
+                    <p className="text-sm mb-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-noir-400)' }}>
+                        {analysisProgress || 'Cross-referencing claim against video timeline'}
+                    </p>
+                    <p className="text-xs" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-noir-500)' }}>
+                        This may take 50-60 seconds...
                     </p>
                 </div>
             </div>
@@ -522,6 +562,21 @@ export default function Workspace({ caseData, onAnalyze, onStartAnalysis }) {
                     >
                         ▶ BEGIN INVESTIGATION
                     </button>
+                    
+                    {/* Error Display */}
+                    {error && (
+                        <div className="mt-4 p-4 rounded-lg" style={{
+                            backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                            border: '1px solid var(--color-verdict-red)',
+                        }}>
+                            <p className="text-sm" style={{
+                                fontFamily: 'var(--font-mono)',
+                                color: 'var(--color-verdict-red-light)',
+                            }}>
+                                ⚠️ {error}
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
