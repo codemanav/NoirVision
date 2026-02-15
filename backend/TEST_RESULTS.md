@@ -1,6 +1,30 @@
 # NoirVision - Test Results & Verification
 
-## Test Date: February 14, 2026
+## Latest Update: Transcript Endpoint Fixed ✅
+
+**Date:** February 15, 2026
+
+**Issue Resolved:** The TwelveLabs `/generate` endpoint was returning a 404 error.
+
+**Root Cause:** The code was using the wrong endpoint. TwelveLabs API v1.3 uses `/analyze` for open-ended text generation, not `/generate`.
+
+**Fix Applied:**
+- Changed endpoint from `/v1.3/generate` to `/v1.3/analyze`
+- Updated request format to match TwelveLabs API specification
+- Added proper response parsing for the analyze endpoint format
+- The response structure is: `{ "id": "...", "data": "text content", "finish_reason": "...", "usage": {...} }`
+
+**Test Results:**
+- ✅ Endpoint now returns 200 OK
+- ✅ Successfully generates transcript analysis
+- ✅ Correctly identifies videos with no spoken dialogue
+- ✅ Example: "The video contains no spoken words or dialogue..." (476 chars)
+
+**Impact:** All transcript-based features now work correctly, improving the quality of credibility reports.
+
+---
+
+## Test Date: February 14-15, 2026
 
 ## ✅ Integration Test Results
 
@@ -113,10 +137,10 @@ The claim "Only cars moving on the road" is generally supported by the video evi
 ### TwelveLabs Integration:
 - ✅ Video upload: Working
 - ✅ Video indexing: Working
-- ✅ Transcript generation: Working
+- ✅ Transcript generation: Working (using /analyze endpoint)
 - ✅ Chapter segmentation: Working (4 chapters)
 - ✅ Highlight detection: Working (3 events)
-- ⚠️ Generate endpoint: 404 (not available on current plan)
+- ✅ Analyze endpoint: Working (fixed from /generate to /analyze)
 
 ### Backboard AI Integration:
 - ✅ API connection: Working
