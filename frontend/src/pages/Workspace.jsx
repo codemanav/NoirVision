@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { MOCK_SUPPORTED_CASE, MOCK_CONTRADICTED_CASE } from '../data/mockData';
 
-export default function Workspace({ caseData, onAnalyze }) {
+export default function Workspace({ caseData, onAnalyze, onStartAnalysis }) {
     const [title, setTitle] = useState('');
     const [claim, setClaim] = useState('');
     const [fileName, setFileName] = useState('');
@@ -21,14 +21,31 @@ export default function Workspace({ caseData, onAnalyze }) {
         if (file) setFileName(file.name);
     };
 
-    const handleSubmit = () => {
-        if (!fileName || !claim.trim() || !title.trim()) return;
+    const handleSubmit = async () => {
+        if (!claim.trim() || !title.trim()) return;
+        if (!onStartAnalysis) {
+            setIsAnalyzing(true);
+            setTimeout(() => {
+                const mockResult = Math.random() > 0.5 ? MOCK_SUPPORTED_CASE : MOCK_CONTRADICTED_CASE;
+                onAnalyze({ ...mockResult, claim, caseTitle: title.trim(), caseId: 'local-mock' });
+                setIsAnalyzing(false);
+            }, 2500);
+            return;
+        }
         setIsAnalyzing(true);
-        setTimeout(() => {
+        try {
+            const incidentId = await onStartAnalysis({
+                title: title.trim(),
+                claim: claim.trim(),
+                videoLink: fileName ? `file:${fileName}` : '',
+            });
             const mockResult = Math.random() > 0.5 ? MOCK_SUPPORTED_CASE : MOCK_CONTRADICTED_CASE;
-            onAnalyze({ ...mockResult, claim, caseTitle: title.trim() });
+            onAnalyze({ ...mockResult, claim: claim.trim(), caseTitle: title.trim(), caseId: incidentId });
+        } catch (e) {
+            console.error('Start analysis failed', e);
+        } finally {
             setIsAnalyzing(false);
-        }, 2500);
+        }
     };
 
     // ============================

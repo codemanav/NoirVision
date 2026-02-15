@@ -1,6 +1,12 @@
-import { MOCK_PAST_CASES } from '../../data/mockData';
+export default function Sidebar({ cases = [], loading, error, onSelectCase, activeCaseId, onNewCase }) {
+    const caseList = cases.map((inc) => ({
+        id: inc.incident_id,
+        title: inc.incident_name,
+        date: (inc.created_at || '').slice(0, 10),
+        description: inc.description || '',
+        verdict: inc.generated_text ? 'supported' : 'pending',
+    }));
 
-export default function Sidebar({ onSelectCase, activeCaseId, onNewCase }) {
     return (
         <aside className="w-[300px] shrink-0 flex flex-col h-full"
             style={{
@@ -38,9 +44,20 @@ export default function Sidebar({ onSelectCase, activeCaseId, onNewCase }) {
 
             {/* Case List */}
             <div className="flex-1 overflow-y-auto" style={{ padding: '0 12px 24px' }}>
-                {MOCK_PAST_CASES.map((caseItem) => {
+                {error && (
+                    <p className="text-xs" style={{ color: 'var(--color-verdict-red-light)', padding: '12px', margin: 0 }}>
+                        {error}
+                    </p>
+                )}
+                {loading && (
+                    <p className="text-xs" style={{ color: 'var(--color-noir-400)', padding: '12px', margin: 0 }}>
+                        Loading cases...
+                    </p>
+                )}
+                {!loading && !error && caseList.map((caseItem) => {
                     const isActive = caseItem.id === activeCaseId;
                     const isContradicted = caseItem.verdict === 'contradicted';
+                    const isPending = caseItem.verdict === 'pending';
 
                     return (
                         <button
@@ -76,11 +93,11 @@ export default function Sidebar({ onSelectCase, activeCaseId, onNewCase }) {
                                 </span>
                                 <span className="text-[10px] px-1.5 py-0.5 rounded tracking-wide font-bold"
                                     style={{
-                                        backgroundColor: isContradicted ? 'var(--color-verdict-red-glow)' : 'var(--color-verdict-green-glow)',
-                                        color: isContradicted ? 'var(--color-verdict-red-light)' : 'var(--color-verdict-green-light)',
+                                        backgroundColor: isPending ? 'var(--color-noir-600)' : (isContradicted ? 'var(--color-verdict-red-glow)' : 'var(--color-verdict-green-glow)'),
+                                        color: isPending ? 'var(--color-noir-300)' : (isContradicted ? 'var(--color-verdict-red-light)' : 'var(--color-verdict-green-light)'),
                                         fontFamily: 'var(--font-mono)',
                                     }}>
-                                    {isContradicted ? 'REJ' : 'VER'}
+                                    {isPending ? 'PEND' : (isContradicted ? 'REJ' : 'VER')}
                                 </span>
                             </div>
 
@@ -103,7 +120,7 @@ export default function Sidebar({ onSelectCase, activeCaseId, onNewCase }) {
             <div className="border-t text-center" style={{ borderColor: 'var(--color-noir-700)', padding: '20px 16px' }}>
                 <span className="text-[10px] tracking-widest"
                     style={{ color: 'var(--color-noir-500)', fontFamily: 'var(--font-mono)' }}>
-                    {MOCK_PAST_CASES.length} CASES ON FILE
+                    {caseList.length} CASES ON FILE
                 </span>
             </div>
         </aside>

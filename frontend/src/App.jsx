@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import Topbar from './components/layout/Topbar';
@@ -8,41 +8,107 @@ import Workspace from './pages/Workspace';
 import Login from './pages/Login.jsx';
 import SignUp from './pages/SignUp.jsx';
 import { MOCK_SUPPORTED_CASE, MOCK_CONTRADICTED_CASE } from './data/mockData';
+import * as usersApi from './api/users';
 import './App.css';
 
+function generateIncidentId() {
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const n = Math.floor(Math.random() * 1000);
+  return `${dateStr}-${String(n).padStart(3, '0')}`;
+}
+
 function WorkspacePage() {
+  const auth = useAuth();
+  const idToken = auth.user?.id_token;
+
+  const [incidents, setIncidents] = useState([]);
   const [caseData, setCaseData] = useState(null);
   const [activeCaseId, setActiveCaseId] = useState(null);
+  const [incidentsLoading, setIncidentsLoading] = useState(true);
+  const [incidentsError, setIncidentsError] = useState(null);
 
-  const handleAnalyze = (result) => {
+  // Ensure profile exists and load incidents when authenticated
+  useEffect(() => {
+    if (!idToken) return;
+    let cancelled = false;
+    setIncidentsLoading(true);
+    setIncidentsError(null);
+    usersApi.putProfile(idToken).catch(() => {}).then(() => {
+      if (cancelled) return;
+      return usersApi.listIncidents(idToken);
+    }).then((list) => {
+      if (cancelled) return;
+      setIncidents(Array.isArray(list) ? list : []);
+    }).catch((e) => {
+      if (!cancelled) setIncidentsError(e.message || 'Failed to load cases');
+    }).finally(() => {
+      if (!cancelled) setIncidentsLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [idToken]);
+
+  const refreshIncidents = useCallback(() => {
+    if (!idToken) return;
+    usersApi.listIncidents(idToken).then(setIncidents).catch(() => {});
+  }, [idToken]);
+
+  const handleAnalyze = useCallback((result) => {
     setCaseData(result);
     setActiveCaseId(result.caseId);
-  };
+    if (!idToken || !result.caseId) return;
+    const generatedText = typeof result === 'object' ? JSON.stringify(result) : String(result);
+    usersApi.updateIncident(idToken, result.caseId, { generated_text: generatedText }).then(() => {
+      refreshIncidents();
+    }).catch(() => {});
+  }, [idToken, refreshIncidents]);
 
-  const handleSelectCase = (caseItem) => {
+  const handleSelectCase = useCallback((caseItem) => {
     setActiveCaseId(caseItem.id);
-    if (caseItem.verdict === 'supported') {
-      setCaseData({ ...MOCK_SUPPORTED_CASE, caseId: caseItem.id });
-    } else {
-      setCaseData({ ...MOCK_CONTRADICTED_CASE, caseId: caseItem.id });
-    }
-  };
+    const base = caseItem.verdict === 'supported' ? MOCK_SUPPORTED_CASE : (caseItem.verdict === 'contradicted' ? MOCK_CONTRADICTED_CASE : MOCK_SUPPORTED_CASE);
+    setCaseData({
+      ...base,
+      caseId: caseItem.id,
+      caseTitle: caseItem.title,
+      claim: caseItem.description || base.claim,
+    });
+  }, []);
 
-  const handleNewCase = () => {
+  const handleNewCase = useCallback(() => {
     setCaseData(null);
     setActiveCaseId(null);
-  };
+  }, []);
+
+  const handleStartAnalysis = useCallback(async ({ title, claim, videoLink }) => {
+    if (!idToken) throw new Error('Not authenticated');
+    const incidentId = generateIncidentId();
+    await usersApi.createIncident(idToken, {
+      incident_id: incidentId,
+      incident_name: title,
+      description: claim || '',
+      video_link: videoLink || '',
+      generated_text: '',
+    });
+    refreshIncidents();
+    return incidentId;
+  }, [idToken, refreshIncidents]);
 
   return (
     <div className="app-shell">
       <Topbar />
       <div className="app-body">
         <Sidebar
+          cases={incidents}
+          loading={incidentsLoading}
+          error={incidentsError}
           onSelectCase={handleSelectCase}
           activeCaseId={activeCaseId}
           onNewCase={handleNewCase}
         />
-        <Workspace caseData={caseData} onAnalyze={handleAnalyze} />
+        <Workspace
+          caseData={caseData}
+          onAnalyze={handleAnalyze}
+          onStartAnalysis={handleStartAnalysis}
+        />
         <ChatPanel key={caseData ? `chat-${caseData.caseId}` : 'chat-locked'} isUnlocked={!!caseData} caseData={caseData} />
       </div>
     </div>

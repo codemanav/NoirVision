@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import videos
+from app.routers import users, videos
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,18 +21,13 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Validate config on startup."""
-    try:
-        s = get_settings()
-        s.require_s3()
-        if not s.twelvelabs_mock:
-            s.require_twelvelabs()
-        logger.info("Config validated (mock=%s)", s.twelvelabs_mock)
-    except ValueError as e:
-        logger.error("Startup validation failed: %s", e)
-        raise
+    """Startup. S3 and TwelveLabs are only required when calling /api/videos/* (checked there)."""
+    s = get_settings()
+    cognito_ok = bool(s.cognito_user_pool_id and s.cognito_user_pool_id.strip())
+    logger.info("NoirVision backend starting; Cognito configured=%s", cognito_ok)
+    if not cognito_ok:
+        logger.warning("Set COGNITO_USER_POOL_ID (and COGNITO_REGION) in backend/.env for /api/users/me/*")
     yield
-    # Shutdown if needed
     pass
 
 
@@ -53,6 +48,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(videos.router)
+app.include_router(users.router)
 
 
 @app.get("/health")
