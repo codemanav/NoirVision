@@ -6,7 +6,12 @@ import os
 import json
 import asyncio
 from typing import Dict, Any, List
-from backboard import BackboardClient
+
+try:
+    from backboard import BackboardClient
+except ImportError:
+    BackboardClient = None
+
 from app.models import (
     WitnessClaim, 
     VideoAnalysis, 
@@ -21,6 +26,9 @@ class BackboardAnalyzer:
     """
     
     def __init__(self, api_key: str = None):
+        if BackboardClient is None:
+            raise ValueError("backboard package not installed. Install it with: pip install backboard")
+        
         self.api_key = api_key or os.getenv("BACKBOARD_API_KEY")
         if not self.api_key:
             raise ValueError("BACKBOARD_API_KEY not found in environment")
@@ -290,13 +298,13 @@ Be strict. Mark as true ONLY if video clearly supports the claim."""
     ) -> str:
         """Generate verdict based on score and comparisons."""
         if credibility_score >= 80:
-            return "✅ CLAIM SUPPORTED"
+            return "CLAIM SUPPORTED"
         elif credibility_score >= 60:
-            return "✅ CLAIM SUPPORTED (with minor discrepancy)"
+            return "CLAIM SUPPORTED (with minor discrepancy)"
         elif credibility_score >= 40:
-            return "⚠️ INCONCLUSIVE"
+            return "INCONCLUSIVE"
         else:
-            return "❌ CLAIM CONTRADICTED – LIKELY FALSE REPORT"
+            return "CLAIM CONTRADICTED – LIKELY FALSE REPORT"
     
     async def _generate_recommendation(
         self,
