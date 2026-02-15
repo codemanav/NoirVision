@@ -1,8 +1,8 @@
 export default function Timeline({ events }) {
     return (
         <div className="stagger-children">
-            <h3 className="text-sm tracking-[0.2em] font-semibold mb-4"
-                style={{ fontFamily: 'var(--font-typewriter)', color: 'var(--color-gold-400)' }}>
+            <h3 className="text-sm tracking-[0.2em] font-semibold"
+                style={{ fontFamily: 'var(--font-typewriter)', color: 'var(--color-gold-400)', marginBottom: '24px', marginTop: 0 }}>
                 ▌ EVIDENCE TIMELINE
             </h3>
             <div style={{ position: 'relative', paddingLeft: '24px' }}>
@@ -26,7 +26,7 @@ export default function Timeline({ events }) {
                             : 'var(--color-verdict-green)';
 
                     return (
-                        <div key={i} className="animate-fade-in-up mb-4" style={{ opacity: 0 }}>
+                        <div key={i} className="animate-fade-in-up" style={{ opacity: 0, marginBottom: '20px' }}>
                             {/* Dot */}
                             <div style={{
                                 position: 'absolute',
@@ -39,9 +39,9 @@ export default function Timeline({ events }) {
                                 marginTop: '4px',
                             }} />
 
-                            <div className="vintage-card p-3 ml-3">
+                            <div className="vintage-card ml-3" style={{ padding: '16px' }}>
                                 {/* Time */}
-                                <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
                                     <span style={{
                                         fontFamily: 'var(--font-mono)',
                                         fontSize: '0.75rem',
@@ -67,7 +67,8 @@ export default function Timeline({ events }) {
                                     fontFamily: 'var(--font-typewriter)',
                                     fontSize: '0.8rem',
                                     color: 'var(--color-noir-100)',
-                                    marginBottom: '4px',
+                                    marginBottom: '12px',
+                                    marginTop: 0,
                                     lineHeight: 1.5,
                                 }}>
                                     {evt.event}
@@ -78,6 +79,7 @@ export default function Timeline({ events }) {
                                     fontSize: '0.7rem',
                                     color: 'var(--color-noir-400)',
                                     fontStyle: 'italic',
+                                    margin: 0,
                                 }}>
                                     Ref: "{evt.claimRef}"
                                 </p>

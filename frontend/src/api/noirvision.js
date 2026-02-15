@@ -13,7 +13,7 @@ const defaultBase = typeof window !== "undefined" ? "" : "http://localhost:8000"
 export async function submitAnalyze(opts, baseUrl = defaultBase) {
   const { projectId, claim, youtubeUrl, s3Key } = opts;
   if (!projectId || !claim) throw new Error("projectId and claim required");
-  if ((youtubeUrl && s3Key) || (!youtubeUrl && !s3Key)))
+  if ((youtubeUrl && s3Key) || (!youtubeUrl && !s3Key))
     throw new Error("Provide exactly one of youtubeUrl or s3Key");
 
   const body = { project_id: projectId, claim };

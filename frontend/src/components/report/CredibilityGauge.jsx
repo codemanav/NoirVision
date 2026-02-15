@@ -17,7 +17,7 @@ export default function CredibilityGauge({ score, verdict }) {
     }, [score]);
 
     return (
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center" style={{ gap: '20px' }}>
             <div style={{ position: 'relative', width: '140px', height: '140px' }}>
                 <svg width="140" height="140" viewBox="0 0 140 140">
                     {/* Background circle */}
@@ -76,6 +76,7 @@ export default function CredibilityGauge({ score, verdict }) {
                 fontSize: '0.75rem',
                 letterSpacing: '0.2em',
                 color: 'var(--color-noir-300)',
+                margin: 0,
             }}>
                 CREDIBILITY SCORE
             </p>

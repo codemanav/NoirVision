@@ -2,17 +2,17 @@ import { MOCK_PAST_CASES } from '../../data/mockData';
 
 export default function Sidebar({ onSelectCase, activeCaseId, onNewCase }) {
     return (
-        <aside className="w-[280px] shrink-0 flex flex-col h-full"
+        <aside className="w-[300px] shrink-0 flex flex-col h-full"
             style={{
                 background: 'linear-gradient(180deg, var(--color-noir-900) 0%, var(--color-noir-950) 100%)',
                 borderRight: '1px solid var(--color-noir-700)',
             }}>
 
             {/* Header */}
-            <div className="p-4 border-b" style={{ borderColor: 'var(--color-noir-700)' }}>
+            <div className="border-b" style={{ borderColor: 'var(--color-noir-700)', padding: '24px 20px' }}>
                 <button
                     onClick={onNewCase}
-                    className="w-full py-2.5 px-4 rounded text-sm font-semibold tracking-wider flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer"
+                    className="w-full py-3 px-5 rounded-lg text-sm font-semibold tracking-wider flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer"
                     style={{
                         background: 'linear-gradient(135deg, var(--color-gold-500), var(--color-gold-400))',
                         color: 'var(--color-noir-950)',
@@ -29,15 +29,15 @@ export default function Sidebar({ onSelectCase, activeCaseId, onNewCase }) {
             </div>
 
             {/* Section Title */}
-            <div className="px-4 pt-4 pb-2">
+            <div style={{ padding: '28px 20px 16px' }}>
                 <h3 className="text-xs tracking-[0.2em] font-medium"
-                    style={{ color: 'var(--color-noir-400)', fontFamily: 'var(--font-mono)' }}>
+                    style={{ color: 'var(--color-noir-400)', fontFamily: 'var(--font-mono)', margin: 0 }}>
                     CASE FILES
                 </h3>
             </div>
 
             {/* Case List */}
-            <div className="flex-1 overflow-y-auto px-2 pb-4">
+            <div className="flex-1 overflow-y-auto" style={{ padding: '0 12px 24px' }}>
                 {MOCK_PAST_CASES.map((caseItem) => {
                     const isActive = caseItem.id === activeCaseId;
                     const isContradicted = caseItem.verdict === 'contradicted';
@@ -46,8 +46,10 @@ export default function Sidebar({ onSelectCase, activeCaseId, onNewCase }) {
                         <button
                             key={caseItem.id}
                             onClick={() => onSelectCase(caseItem)}
-                            className="w-full text-left p-3 rounded mb-1 transition-all duration-200 cursor-pointer"
+                            className="w-full text-left rounded-lg transition-all duration-200 cursor-pointer"
                             style={{
+                                padding: '16px',
+                                marginBottom: '12px',
                                 background: isActive
                                     ? 'linear-gradient(135deg, var(--color-noir-700), var(--color-noir-800))'
                                     : 'transparent',
@@ -67,7 +69,7 @@ export default function Sidebar({ onSelectCase, activeCaseId, onNewCase }) {
                             }}
                         >
                             {/* Case number + verdict badge */}
-                            <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
                                 <span className="text-xs tracking-wide"
                                     style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-gold-400)' }}>
                                     {caseItem.id}
@@ -83,13 +85,13 @@ export default function Sidebar({ onSelectCase, activeCaseId, onNewCase }) {
                             </div>
 
                             {/* Title */}
-                            <p className="text-sm font-medium mb-1" style={{ color: 'var(--color-noir-100)' }}>
+                            <p className="text-sm font-medium" style={{ color: 'var(--color-noir-100)', marginBottom: '8px', marginTop: 0 }}>
                                 {caseItem.title}
                             </p>
 
                             {/* Date & snippet */}
                             <p className="text-xs leading-relaxed"
-                                style={{ color: 'var(--color-noir-400)', fontFamily: 'var(--font-mono)' }}>
+                                style={{ color: 'var(--color-noir-400)', fontFamily: 'var(--font-mono)', margin: 0 }}>
                                 {caseItem.date}
                             </p>
                         </button>
@@ -98,7 +100,7 @@ export default function Sidebar({ onSelectCase, activeCaseId, onNewCase }) {
             </div>
 
             {/* Footer */}
-            <div className="p-3 border-t text-center" style={{ borderColor: 'var(--color-noir-700)' }}>
+            <div className="border-t text-center" style={{ borderColor: 'var(--color-noir-700)', padding: '20px 16px' }}>
                 <span className="text-[10px] tracking-widest"
                     style={{ color: 'var(--color-noir-500)', fontFamily: 'var(--font-mono)' }}>
                     {MOCK_PAST_CASES.length} CASES ON FILE
