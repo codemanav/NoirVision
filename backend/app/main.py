@@ -2,6 +2,11 @@
 NoirVision Backend API
 FastAPI server for forensic video analysis and credibility reporting.
 """
+from __future__ import annotations
+
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -16,15 +21,38 @@ from app.mock_data import (
     MOCK_CLAIM_SUPPORTED,
     MOCK_CLAIM_CONTRADICTED
 )
+from app.config import get_settings
+from app.routers import users, videos
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
 
-# Initialize FastAPI app
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup. S3 and TwelveLabs are only required when calling /api/videos/* (checked there)."""
+    s = get_settings()
+    cognito_ok = bool(s.cognito_user_pool_id and s.cognito_user_pool_id.strip())
+    logger.info("NoirVision backend starting; Cognito configured=%s", cognito_ok)
+    if not cognito_ok:
+        logger.warning("Set COGNITO_USER_POOL_ID (and COGNITO_REGION) in backend/.env for /api/users/me/*")
+    yield
+
+
+# TODO(production): Add auth dependency (e.g. JWT or API key) and use on protected routes.
+# Demo mode: no auth; all routes are open.
+
 app = FastAPI(
     title="NoirVision API",
     description="Forensic video analysis and credibility reporting for law enforcement",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Add CORS middleware
@@ -43,6 +71,10 @@ except ValueError as e:
     print(f"Warning: {e}")
     print("Backboard analyzer not initialized. Set BACKBOARD_API_KEY in .env")
     analyzer = None
+
+# Include routers
+app.include_router(videos.router)
+app.include_router(users.router)
 
 
 @app.get("/")
