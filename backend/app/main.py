@@ -5,29 +5,22 @@ FastAPI server for forensic video analysis and credibility reporting.
 from __future__ import annotations
 
 import logging
+import os
 from contextlib import asynccontextmanager
+from pathlib import Path
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-import os
-from pathlib import Path
-from typing import Optional
 
-from app.models import WitnessClaim, CredibilityReport
+from app.models import CredibilityReport
 from app.backboard_agent import BackboardAnalyzer
 from app.report_generator import ReportGenerator
 from app.noirvision_analyzer import NoirVisionAnalyzer
 from app.services.twelvelabs_client import run_analysis
-# Temporarily commented out - not needed for core analysis
-# from app.mock_data import (
-#     get_mock_video_analysis_supported,
-#     get_mock_video_analysis_contradicted,
-#     MOCK_CLAIM_SUPPORTED,
-#     MOCK_CLAIM_CONTRADICTED
-# )
 from app.config import get_settings
-# from app.routers import users, videos  # Temporarily disabled
+from app.routers import users, videos
 
 logging.basicConfig(
     level=logging.INFO,
@@ -49,9 +42,6 @@ async def lifespan(app: FastAPI):
         logger.warning("Set COGNITO_USER_POOL_ID (and COGNITO_REGION) in backend/.env for /api/users/me/*")
     yield
 
-
-# TODO(production): Add auth dependency (e.g. JWT or API key) and use on protected routes.
-# Demo mode: no auth; all routes are open.
 
 app = FastAPI(
     title="NoirVision API",
@@ -79,9 +69,9 @@ except ValueError as e:
     analyzer = None
     noirvision = None
 
-# Include routers (temporarily disabled for core functionality)
-# app.include_router(videos.router)
-# app.include_router(users.router)
+# Include routers
+app.include_router(videos.router)
+app.include_router(users.router)
 
 
 @app.get("/")
@@ -102,95 +92,6 @@ async def health_check():
         "status": "healthy",
         "backboard_configured": analyzer is not None
     }
-
-
-@app.post("/analyze", response_model=dict)
-async def analyze_claim(request: AnalysisRequest):
-    """
-    Analyze a witness claim against video evidence.
-    
-    Args:
-        request: AnalysisRequest containing claim and video analysis
-        
-    Returns:
-        Dictionary with credibility report (both structured and formatted)
-    """
-    if not analyzer:
-        raise HTTPException(
-            status_code=500,
-            detail="Backboard analyzer not configured. Set BACKBOARD_API_KEY in environment."
-        )
-    
-    try:
-        # Run analysis
-        report = await analyzer.analyze_claim_vs_video(
-            claim=request.claim,
-            video_analysis=request.video_analysis
-        )
-        
-        # Generate formatted report
-        formatted_report = ReportGenerator.generate_report(report)
-        
-        return {
-            "report": report.model_dump(),
-            "formatted_report": formatted_report
-        }
-    
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Analysis failed: {str(e)}"
-        )
-
-
-@app.post("/analyze/text", response_model=dict)
-async def analyze_text_only(claim_text: str):
-    """
-    Quick analysis endpoint - just provide claim text, uses mock video.
-    Useful for testing.
-    
-    Args:
-        claim_text: The witness claim text
-        
-    Returns:
-        Dictionary with credibility report
-    """
-    if not analyzer:
-        raise HTTPException(
-            status_code=500,
-            detail="Backboard analyzer not configured. Set BACKBOARD_API_KEY in environment."
-        )
-    
-    try:
-        # Determine which mock video to use based on claim
-        from app.mock_data import get_mock_video_analysis_supported, get_mock_video_analysis_contradicted
-        if "blue note" in claim_text.lower() or "jazz club" in claim_text.lower():
-            video_analysis = get_mock_video_analysis_contradicted()
-        else:
-            video_analysis = get_mock_video_analysis_supported()
-        
-        # Create claim object
-        claim = WitnessClaim(claim_text=claim_text)
-        
-        # Run analysis
-        report = await analyzer.analyze_claim_vs_video(
-            claim=claim,
-            video_analysis=video_analysis
-        )
-        
-        # Generate formatted report
-        formatted_report = ReportGenerator.generate_report(report)
-        
-        return {
-            "report": report.model_dump(),
-            "formatted_report": formatted_report
-        }
-    
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Analysis failed: {str(e)}"
-        )
 
 
 @app.post("/analyze/complete")

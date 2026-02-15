@@ -6,7 +6,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth import get_current_user
-from app.models.user import (
+from app.models_twelvelabs.user import (
     IncidentCreate,
     IncidentResponse,
     IncidentUpdate,
