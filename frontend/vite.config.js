@@ -7,6 +7,6 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 3000,
-    strictPort: true,
+    strictPort: true, // must use 3000 to match AWS Cognito callback URL
   },
 })
